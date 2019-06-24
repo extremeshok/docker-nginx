@@ -97,16 +97,6 @@ RUN echo "**** Add vts ****" \
   && git clone --recursive https://github.com/vozlt/nginx-module-vts.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=nginx-module-vts|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
-RUN echo "*** Add libbrotli ****" \
-  && cd /usr/local/src \
-  && git clone https://github.com/bagder/libbrotli.git \
-  && cd libbrotli \
-  && ./autogen.sh \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
-
 RUN echo "**** Add Brotli ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/yverry/ngx_brotli.git \
@@ -126,16 +116,6 @@ RUN echo "**** Add Cache Purge ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/nginx-modules/ngx_cache_purge.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_cache_purge|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
-
-RUN echo "*** Add libmaxminddb ****" \
-  && cd /usr/local/src \
-  && git clone --recursive https://github.com/maxmind/libmaxminddb.git \
-  && cd libmaxminddb \
-  && ./bootstrap \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
 
 RUN echo "**** Add Geoip2 ****" \
   && cd /usr/local/src \
@@ -170,7 +150,7 @@ RUN echo "**** echo ****" \
 RUN echo "**** http_substitutions_filter ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/http_substitutions_filter_module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_http_substitutions_filter_module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** http concat ****" \
   && cd /usr/local/src \
@@ -195,12 +175,55 @@ RUN echo "*** Patch Nginx Build Config ***" \
   && sed -i 's|CFLAGS="$CFLAGS -Werror"|#CFLAGS="$CFLAGS -Werror"|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/auto/cc/gcc \
   && sed -i 's|dh_shlibdeps -a|dh_shlibdeps -a --dpkg-shlibdeps-params=--ignore-missing-info|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
-
 RUN echo "*** Patch Nginx (SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha)" \
   && cd /usr/local/src/nginx/nginx-${NGINX_VERSION}/ \
   && curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx.patch | patch -p1 \
   && curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx_auto_using_PRIORITIZE_CHACHA.patch | patch -p1 \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+
+RUN echo "*** Add libbrotli ****" \
+  && cd /usr/local/src \
+  && git clone https://github.com/bagder/libbrotli.git \
+  && cd libbrotli \
+  && ./autogen.sh \
+  && ./configure \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+
+RUN echo "*** Add libmaxminddb ****" \
+  && cd /usr/local/src \
+  && git clone --recursive https://github.com/maxmind/libmaxminddb.git \
+  && cd libmaxminddb \
+  && ./bootstrap \
+  && ./configure \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+
+RUN echo "*** Add zlib-cf ****" \
+  && cd /usr/local/src \
+  && git clone --recursive https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
+  && cd zlib-cf \
+  && ./configure \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-zlib=/usr/local/src/zlib-cf |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+
+RUN echo "*** Add PCRE-Jit ***" \
+  && PCRE_VER=$(curl -sL https://ftp.pcre.org/pub/pcre/ | grep -E -o 'pcre\-[0-9.]+\.tar[.a-z]*gz' | awk -F "pcre-" '/.tar.gz$/ {print $2}' | sed -e 's|.tar.gz||g' | tail -n 1 2>&1) \
+  && curl --silent -o /tmp/pcre.tar.gz -L "https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VER}.tar.gz" \
+  && mkdir -p /usr/local/src/pcre \
+  && tar xfz /tmp/pcre.tar.gz -C /usr/local/src/pcre \
+  && rm -f /tmp/pcre.tar.gz \
+  && mv -f /usr/local/src/pcre/*/* /usr/local/src/pcre \
+  && cd /usr/local/src/pcre \
+  && ./configure --prefix=/usr --enable-utf8 --enable-unicode-properties --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-pcretest-libreadline --enable-jit \
+  && make -j "$(nproc)" \
+  && make install \
+  && ldconfig \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit=/usr/local/src/pcre |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "*** Build Nginx ***" \
   && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \

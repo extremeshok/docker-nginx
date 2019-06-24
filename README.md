@@ -6,6 +6,8 @@ Uses the latest official mainline, automatically triggered by nginx releases
 ## Features
 OpenSSL 1.1.1 latest
 Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha
+zlib-cf
+pcre-jit
 
 ## Nginx Modules , always the latest
 brotli
