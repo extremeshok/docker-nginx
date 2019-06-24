@@ -21,3 +21,15 @@ Redis2
 set-misc
 Srcache
 upload-progress
+
+## Not included
+ngx_http_image_filter_module
+ngx_http_js_module
+ngx_http_xslt_filter_module-debug
+ngx-fancyindex
+lua-nginx-module
+lua-upstream-nginx-module
+nchan
+nginx-upstream-fair
+nginx-rtmp-module
+nginx-vod-module

@@ -1,8 +1,18 @@
-FROM nginx:mainline AS BUILD
+FROM nginx:mainline AS BASE
 
 LABEL mantainer="Adrian Kriel <admin@extremeshok.com>" vendor="eXtremeSHOK.com"
 
 ENV OSSL_VERSION 1.1.1
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# ENFORCE en_us UTF8
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+  locale-gen
+ENV SHELL=/bin/bash \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8
 
 RUN echo "**** install packages ****" \
   && apt-get update && apt-get install -y \
@@ -32,7 +42,6 @@ RUN echo "**** install packages ****" \
   uuid-dev \
   wget \
   zlib1g-dev
-
 
 RUN  echo "**** Add Nginx Repo ****" \
   && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
