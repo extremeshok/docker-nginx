@@ -7,8 +7,6 @@ ENV OSSL_VERSION 1.1.1
 ENV DEBIAN_FRONTEND noninteractive
 
 # ENFORCE en_us UTF8
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-  locale-gen
 ENV SHELL=/bin/bash \
   LC_ALL=en_US.UTF-8 \
   LANG=en_US.UTF-8 \
@@ -36,12 +34,16 @@ RUN echo "**** install packages ****" \
   libwebp-dev \
   libxml2-dev \
   libxslt1-dev \
+  locale-gen \
   python-pip \
   tar \
   unzip \
   uuid-dev \
   wget \
   zlib1g-dev
+
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+  locale-gen
 
 RUN  echo "**** Add Nginx Repo ****" \
   && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
