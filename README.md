@@ -1,15 +1,20 @@
-# nginx-pagespeed-build
-Nginx Build environment.
+# eXtremeSHOK.com :: nginx
+Custom Nginx Build following the official nginx Debian Stretch Docker
 
-Uses the latest official mainline, automatically triggered by nginx docker releases
+* Follows the latest official mainline, build is automatically triggered by nginx docker releases
+* Multistage-build docker for the smallest possible image size.
+* All nginx modules static (not dynamic modules)
+
+## About
+Used for all our webservers, serving millions of pages a month. First byte times are 0.24s or lower with full SSL.
 
 ## Features
-OpenSSL 1.1.1 latest with ec_nistp_64_gcc_128 enabled
-Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha
-zlib-cf
-pcre-jit
+* OpenSSL 1.1.1 latest with ec_nistp_64_gcc_128 enabled (speed)
+* Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha (speed)
+* zlib-cf (Cloudflare’s Zlib for 25-100% performance increase)
+* pcre-jit with the latest pcre release (speed)
 
-## Nginx Modules , always the latest versions
+## Nginx Modules , always the latest versions from the respective Repositories
 brotli
 cache-purge
 Dav Ext
@@ -38,6 +43,8 @@ nchan
 nginx-upstream-fair
 nginx-rtmp-module
 nginx-vod-module
+naxsi
+mod_security
 
 ## Testing
 docker pull extremeshok/nginx-pagespeed-build:latest && docker run --rm -ti extremeshok/nginx-pagespeed-build:latest /bin/bash

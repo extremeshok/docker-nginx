@@ -1,6 +1,10 @@
-FROM nginx:mainline AS BASE
+FROM nginx:mainline AS BUILD
 
 LABEL mantainer="Adrian Kriel <admin@extremeshok.com>" vendor="eXtremeSHOK.com"
+
+########################
+#### MULTIBUILD: Stage 1
+########################
 
 ENV OSSL_VERSION 1.1.1
 
@@ -12,8 +16,10 @@ ENV SHELL=/bin/bash \
   LANG=en_US.UTF-8 \
   LANGUAGE=en_US.UTF-8
 
+USER root
+
 RUN echo "**** install packages ****" \
-  && apt-get update && apt-get install  -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y \
+  && apt-get update && apt-get install -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y \
   autoconf \
   automake \
   autotools-dev \
@@ -62,8 +68,8 @@ RUN echo "**** install packages ****" \
   wget \
   zlib1g-dev
 
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-  locale-gen
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen
 
 RUN  echo "**** Add Nginx Repo ****" \
   && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
@@ -79,77 +85,77 @@ RUN echo "**** Prepare Nginx ****" \
 
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
+  && git clone --recursive --depth=1 https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl --with-openssl-opt="enable-ec_nistp_64_gcc_128"|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add set misc ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/set-misc-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/set-misc-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/set-misc-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add vts ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/vozlt/nginx-module-vts.git \
+  && git clone --recursive --depth=1 https://github.com/vozlt/nginx-module-vts.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/nginx-module-vts|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Brotli ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/yverry/ngx_brotli.git \
+  && git clone --recursive --depth=1 https://github.com/yverry/ngx_brotli.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_brotli|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add More Headers ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/headers-more-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/headers-more-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/headers-more-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Upload Progress ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/masterzen/nginx-upload-progress-module.git \
+  && git clone --recursive --depth=1 https://github.com/masterzen/nginx-upload-progress-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/nginx-upload-progress-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Cache Purge ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/nginx-modules/ngx_cache_purge.git \
+  && git clone --recursive --depth=1 https://github.com/nginx-modules/ngx_cache_purge.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_cache_purge|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Geoip2 ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/leev/ngx_http_geoip2_module.git \
+  && git clone --recursive --depth=1 https://github.com/leev/ngx_http_geoip2_module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_http_geoip2_module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Redis2 ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/redis2-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/redis2-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/redis2-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Webdav ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/arut/nginx-dav-ext-module.git \
+  && git clone --recursive --depth=1 https://github.com/arut/nginx-dav-ext-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_dav_module --add-module=/usr/local/src/nginx-dav-ext-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Memc  (memcached) ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/memc-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/memc-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/memc-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Srcache ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/srcache-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/srcache-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/srcache-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** echo ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openresty/echo-nginx-module.git \
+  && git clone --recursive --depth=1 https://github.com/openresty/echo-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/echo-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** http_substitutions_filter ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git \
+  && git clone --recursive --depth=1 https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_http_substitutions_filter_module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** http concat ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/alibaba/nginx-http-concat.git \
+  && git clone --recursive --depth=1 https://github.com/alibaba/nginx-http-concat.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/nginx-http-concat|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add pagespeed ****" \
@@ -168,7 +174,7 @@ RUN echo "**** Add pagespeed ****" \
 # this needs to be last
 RUN echo "**** Add Nginx Development Kit ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/simplresty/ngx_devel_kit.git \
+  && git clone --recursive --depth=1 https://github.com/simplresty/ngx_devel_kit.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_devel_kit|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "*** Patch Nginx Build Config ***" \
@@ -186,7 +192,7 @@ RUN echo "*** Patch Nginx (SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize ch
 
 RUN echo "*** Add libbrotli ****" \
   && cd /usr/local/src \
-  && git clone https://github.com/bagder/libbrotli.git \
+  && git clone --recursive --depth=1 https://github.com/bagder/libbrotli.git \
   && cd libbrotli \
   && ./autogen.sh \
   && ./configure \
@@ -196,7 +202,7 @@ RUN echo "*** Add libbrotli ****" \
 
 RUN echo "*** Add libmaxminddb ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/maxmind/libmaxminddb.git \
+  && git clone --recursive --depth=1 https://github.com/maxmind/libmaxminddb.git \
   && cd libmaxminddb \
   && ./bootstrap \
   && ./configure \
@@ -206,7 +212,7 @@ RUN echo "*** Add libmaxminddb ****" \
 
 RUN echo "*** Add zlib-cf ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
+  && git clone --recursive --depth=1 https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
   && cd zlib-cf \
   && ./configure \
   && make -j $(nproc) \
@@ -222,7 +228,7 @@ RUN echo "*** Add PCRE-Jit ***" \
   && rm -f /tmp/pcre.tar.gz \
   && mv -f /usr/local/src/pcre/*/* /usr/local/src/pcre \
   && cd /usr/local/src/pcre \
-  && ./configure --prefix=/usr --enable-utf8 --enable-unicode-properties --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-pcretest-libreadline --enable-jit \
+  && ./configure --prefix=/usr/local/ --enable-utf8 --enable-unicode-properties --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-pcretest-libreadline --enable-jit \
   && make -j "$(nproc)" \
   && make install \
   && ldconfig \
@@ -231,21 +237,74 @@ RUN echo "*** Add PCRE-Jit ***" \
 RUN echo "*** Build Nginx ***" \
   && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \
   && cd /usr/local/src/nginx/nginx-${NGINX_VERSION}/ \
+  && apt-get -y purge nginx* \
+  && rm -rf /usr/lib/nginx/modules/* \
   && apt build-dep nginx -y  \
   && dpkg-buildpackage -b \
   && cd /usr/local/src/nginx \
-  && dpkg -i nginx*.deb
+  && dpkg -i nginx*.deb \
+  &&  cp -f $(echo "/usr/local/src/nginx/nginx_${NGINX_VERSION}*.deb") /usr/local/src/nginx.deb
+
+########################
+#### MULTIBUILD: Stage 2
+########################
+
+FROM nginx:mainline AS BASE
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# ENFORCE en_us UTF8
+ENV SHELL=/bin/bash \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8
+
+USER root
+
+RUN echo "**** Set local to en_US.UTF8 ****" \
+  && apt-get update && apt-get install -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y locales \
+  && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen
+
+RUN echo "*** remove current nginx ***" \
+  && apt-get -y purge nginx* \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/local/lib/* \
+  && rm -rf /usr/lib/nginx/modules/*
+
+COPY --from=BUILD /usr/local/lib/libbrotlidec.so /usr/local/lib/libbrotlidec.so
+COPY --from=BUILD /usr/local/lib/libbrotlienc.so /usr/local/lib/libbrotlienc.so
+COPY --from=BUILD /usr/local/lib/libmaxminddb.so /usr/local/lib/libmaxminddb.so
+COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
+COPY --from=BUILD /usr/local/lib/libpcre.so /usr/local/lib/libpcre.so
+COPY --from=BUILD /usr/local/lib/libpcre16.so /usr/local/lib/libpcre16.so
+COPY --from=BUILD /usr/local/lib/libpcre32.so /usr/local/lib/libpcre32.so
+COPY --from=BUILD /usr/local/lib/libpcrecpp.so /usr/local/lib/libpcrecpp.so
+COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
+RUN ldconfig
+
+COPY --from=BUILD /usr/local/src/nginx.deb /tmp/nginx.deb
+
+RUN echo "*** install nginx ***" \
+  && dpkg -i /tmp/nginx.deb \
+  && rm -f /tmp/nginx.deb
+
+RUN echo "*** house keeping ***" \
+  && apt-get -y autoremove \
+  && apt-get -y autoclean \
+  && rm -rf /tmp/* \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN echo "**** configure ****" \
-  && mkdir -p /var/cache/pagespeed \
   && mkdir -p /var/cache/nginx \
+  && mkdir -p /var/cache/pagespeed \
   && mkdir -p /var/lib/nginx \
   && mkdir -p /var/run/nginx-cache \
   && mkdir -p /var/www/html
 
 # set proper permissions
 RUN echo "*** set permissions ***" \
-  && chown -R www-data:root /var/lib/nginx /var/cache/nginx /var/run/nginx-cache
+  && chown -R www-data:root /var/cache/nginx /var/cache/pagespeed /var/lib/nginx /var/run/nginx-cache /var/www/html
 
 WORKDIR /var/www/html
 
