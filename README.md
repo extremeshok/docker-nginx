@@ -16,9 +16,9 @@ Used for all our webservers, serving millions of pages a month. First byte times
 * pcre-jit with the latest pcre release (speed)
 * Pagespeed stable branch with psol
 * Brotli
-* Legacy modules replace (redis -> redis2, geoip -> geoip2)
+* Legacy modules replaced (redis -> redis2, geoip -> geoip2)
 
-## Nginx Modules , always the latest versions from the respective Repositories
+## Nginx Modules , always the latest versions from their respective Repositories
 * brotli
 * cache-purge
 * Dav Ext
