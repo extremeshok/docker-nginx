@@ -4,6 +4,7 @@ Custom Nginx Built following the official nginx Debian Stretch Docker
 * Follows the latest official mainline, build is automatically triggered by nginx docker releases
 * Multistage-build docker for the smallest possible image size.
 * All nginx modules static (not dynamic modules)
+* Drop-in replacement for nginx:mainline
 
 ## About
 Used for all our webservers, serving millions of pages a month. First byte times are 0.24s or lower with full SSL.
@@ -51,8 +52,7 @@ Used for all our webservers, serving millions of pages a month. First byte times
 * mod_security
 
 ## Testing
-docker pull extremeshok/nginx-pagespeed-build:latest && docker run
---rm -ti extremeshok/nginx-pagespeed-build:latest /bin/bash
+docker pull extremeshok/nginx:latest && docker run --rm -ti extremeshok/nginx:latest /bin/bash
 
 ## Build Options Inspired by
 https://github.com/nginx/nginx/blob/master/auto/options
