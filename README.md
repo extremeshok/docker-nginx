@@ -9,7 +9,6 @@ Custom Nginx Built following the official nginx Debian Stretch Docker
 ## About
 Used for all our webservers, serving millions of pages a month. First byte times are 0.24s or lower with full SSL.
 
-
 ## Features
 * OpenSSL 1.1.1 latest (TLS 1.3) with ec_nistp_64_gcc_128 enabled (speed)
 * Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha (speed)
@@ -52,12 +51,9 @@ Used for all our webservers, serving millions of pages a month. First byte times
 * mod_security
 
 ## Testing
+```
 docker pull extremeshok/nginx:latest && docker run --rm -ti extremeshok/nginx:latest /bin/bash
-
-## Build Options Inspired by
-https://github.com/nginx/nginx/blob/master/auto/options
-https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc
-https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
+```
 
 ## Example Nginx -V
 ```
@@ -133,3 +129,8 @@ configure arguments:
 --with-openssl=/usr/local/src/openssl
 --with-openssl-opt=enable-ec_nistp_64_gcc_128
 ```
+
+## Build Options Inspired by
+https://github.com/nginx/nginx/blob/master/auto/options
+https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc
+https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
