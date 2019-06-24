@@ -80,7 +80,7 @@ RUN echo "**** Prepare Nginx ****" \
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl --with-openssl-opt="enable-ec_nistp_64_gcc_128"|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Nginx Development Kit ****" \
   && cd /usr/local/src \
@@ -223,7 +223,7 @@ RUN echo "*** Add PCRE-Jit ***" \
   && make -j "$(nproc)" \
   && make install \
   && ldconfig \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit=/usr/local/src/pcre |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "*** Build Nginx ***" \
   && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \

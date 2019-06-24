@@ -4,7 +4,7 @@ Nginx Pagespeed Build environment.
 Uses the latest official mainline, automatically triggered by nginx releases
 
 ## Features
-OpenSSL 1.1.1 latest
+OpenSSL 1.1.1 latest with ec_nistp_64_gcc_128 enabled
 Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha
 zlib-cf
 pcre-jit
@@ -41,3 +41,7 @@ nginx-vod-module
 
 ## Testing
 docker pull extremeshok/nginx-pagespeed-build:latest && docker run --rm -ti extremeshok/nginx-pagespeed-build:latest /bin/bash
+
+## Inspired by
+https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc
+https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
