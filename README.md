@@ -1,7 +1,7 @@
 # nginx-pagespeed-build
 Nginx Pagespeed Build environment.
 
-Uses the latest official mainline, automatically triggered by nginx releases
+Uses the latest official mainline, automatically triggered by nginx docker releases
 
 ## Features
 OpenSSL 1.1.1 latest with ec_nistp_64_gcc_128 enabled
@@ -20,6 +20,8 @@ http concat
 http_substitutions_filter
 Memc (memcached)
 Nginx Development Kit
+ngx_http_image_filter_module
+ngx_http_xslt_filter_module
 pagespeed
 Redis2
 set-misc
@@ -28,9 +30,7 @@ upload-progress
 vts
 
 ## Not included
-ngx_http_image_filter_module
 ngx_http_js_module
-ngx_http_xslt_filter_module-debug
 ngx-fancyindex
 lua-nginx-module
 lua-upstream-nginx-module
@@ -42,6 +42,7 @@ nginx-vod-module
 ## Testing
 docker pull extremeshok/nginx-pagespeed-build:latest && docker run --rm -ti extremeshok/nginx-pagespeed-build:latest /bin/bash
 
-## Inspired by
+## Build Options Inspired by
+https://github.com/nginx/nginx/blob/master/auto/options
 https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc
 https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
