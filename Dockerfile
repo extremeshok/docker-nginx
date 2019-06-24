@@ -13,29 +13,49 @@ ENV SHELL=/bin/bash \
   LANGUAGE=en_US.UTF-8
 
 RUN echo "**** install packages ****" \
-  && apt-get update && apt-get install -y \
+  && apt-get update && apt-get install  -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y \
   autoconf \
   automake \
+  autotools-dev \
   build-essential \
   ca-certificates \
+  ccache \
+  checkinstall \
   curl \
   dpkg-dev \
   git \
+  gnupg \
+  gnupg2 \
+  libbsd-dev \
+  libbz2-1.0 \
+  libbz2-dev \
+  libbz2-ocaml \
+  libbz2-ocaml-dev \
   libcurl4-openssl-dev \
   libgd-dev \
+  libgd-dev \
+  libgd3 \
+  libgmp-dev \
+  libgoogle-perftools-dev \
   libjansson-dev \
+  libjemalloc-dev \
   libjpeg-dev \
   libjpeg62-turbo-dev \
   libpcre3 \
   libpcre3-dev \
+  libperl-dev \
   libpng-dev \
+  libreadline-dev \
   libssl-dev \
   libtool \
   libwebp-dev \
+  libxml2 \
   libxml2-dev \
   libxslt1-dev \
-  locale-gen \
+  locales \
+  perl \
   python-pip \
+  software-properties-common \
   tar \
   unzip \
   uuid-dev \
@@ -59,20 +79,23 @@ RUN echo "**** Prepare Nginx ****" \
 
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
-  && git clone --recursive https://github.com/openssl/openssl.git \
-  && cd openssl \
-  && git checkout OpenSSL_1_1_1-stable \
+  && git clone --recursive https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add Nginx Development Kit ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/simplresty/ngx_devel_kit.git \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/ngx_devel_kit|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_devel_kit|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** Add set misc ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/openresty/set-misc-nginx-module.git \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/set-misc-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/set-misc-nginx-module|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+
+RUN echo "**** Add vts ****" \
+  && cd /usr/local/src \
+  && git clone --recursive https://github.com/vozlt/nginx-module-vts.git \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=nginx-module-vts|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "*** Add libbrotli ****" \
   && cd /usr/local/src \
@@ -129,7 +152,7 @@ RUN echo "**** Add Webdav ****" \
   && git clone --recursive https://github.com/arut/nginx-dav-ext-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_dav_module --add-module=/usr/local/src/nginx-dav-ext-module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
-RUN echo "**** Memc ****" \
+RUN echo "**** Memc  (memcached) ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/openresty/memc-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/memc-nginx-module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
@@ -143,6 +166,11 @@ RUN echo "**** echo ****" \
   && cd /usr/local/src \
   && git clone --recursive https://github.com/openresty/echo-nginx-module.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/echo-nginx-module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+
+RUN echo "**** http_substitutions_filter ****" \
+  && cd /usr/local/src \
+  && git clone --recursive https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/http_substitutions_filter_module |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
 RUN echo "**** http concat ****" \
   && cd /usr/local/src \
@@ -167,6 +195,13 @@ RUN echo "*** Patch Nginx Build Config ***" \
   && sed -i 's|CFLAGS="$CFLAGS -Werror"|#CFLAGS="$CFLAGS -Werror"|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/auto/cc/gcc \
   && sed -i 's|dh_shlibdeps -a|dh_shlibdeps -a --dpkg-shlibdeps-params=--ignore-missing-info|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
 
+
+RUN echo "*** Patch Nginx (SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha)" \
+  && cd /usr/local/src/nginx/nginx-${NGINX_VERSION}/ \
+  && curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx.patch | patch -p1 \
+  && curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx_auto_using_PRIORITIZE_CHACHA.patch | patch -p1 \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc |g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+
 RUN echo "*** Build Nginx ***" \
   && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \
   && cd /usr/local/src/nginx/nginx-${NGINX_VERSION}/ \
@@ -175,9 +210,16 @@ RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx \
   && dpkg -i nginx*.deb
 
-RUN echo "**** configure ****"
-RUN mkdir -p /var/cache/pagespeed \
-&& mkdir -p /var/cache/nginx
+RUN echo "**** configure ****" \
+  && mkdir -p /var/cache/pagespeed \
+  && mkdir -p /var/cache/nginx \
+  && mkdir -p /var/lib/nginx \
+  && mkdir -p /var/run/nginx-cache \
+  && mkdir -p /var/www/html
+
+# set proper permissions
+RUN echo "*** set permissions ***" \
+  && chown -R www-data:root /var/lib/nginx /var/cache/nginx /var/run/nginx-cache
 
 WORKDIR /var/www/html
 
