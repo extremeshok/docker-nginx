@@ -188,8 +188,6 @@ RUN echo "*** Patch Nginx Build Config ***" \
 #  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_image_filter_module|g' /usr/local/src/nginx/nginx-*/debian/rules \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_xslt_module|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-sed -i 's|--with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules \
-
 COPY ./patches /patches
 
 # RUN echo "*** Patch Nginx (Dynamic TLS Record Resizing)" \
