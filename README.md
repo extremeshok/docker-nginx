@@ -8,16 +8,13 @@ Custom Nginx Built following the official nginx Debian Stretch Docker
 * Multistage-build docker for the smallest possible image size.
 * All nginx modules static (not dynamic modules)
 * Drop-in replacement for nginx:mainline
-* Nginx patches are verified and from official sources
+* Nginx patches are verified and from trusted sources (all patches used, are hosted in this repo)
 
 ## About
 Used for all our webservers, serving millions of pages a month. First byte times are 0.24s or lower with full SSL.
 
 ## Note
 If you have any ideas or suggestions, please open an issue or pull request
-
-## Bug
-diabled http_image_filter_module due to being unable to detect the default libgd-dev package and will require a custom source compile... I will work on this.
 
 ## Features
 * OpenSSL 1.1.1 latest (TLS 1.3) with ec_nistp_64_gcc_128 enabled (speed)
@@ -26,6 +23,7 @@ diabled http_image_filter_module due to being unable to detect the default libgd
 * pcre-jit with the latest pcre release (speed)
 * Pagespeed stable branch with psol
 * Brotli
+* Latest GD with webp
 * Legacy modules replaced (redis -> redis2, geoip -> geoip2)
 
 ## Nginx Modules , always the latest versions from their respective Repositories

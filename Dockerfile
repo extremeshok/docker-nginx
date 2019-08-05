@@ -18,8 +18,13 @@ ENV SHELL=/bin/bash \
 
 USER root
 
+RUN echo "*** Nginx Version ****" \
+  && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \
+  && echo "Nginx Version: ${NGINX_VERSION}"
+
 RUN echo "**** install packages ****" \
-  && apt-get update && apt-get install -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y \
+  && DEBIAN_FRONTEND=noninteractive \
+  && apt-get update && apt-get install -y \
   autoconf \
   automake \
   autotools-dev \
@@ -80,12 +85,8 @@ RUN  echo "**** Add Nginx Repo ****" \
   && apt-get update
 
 RUN echo "**** Prepare Nginx ****" \
-  && mkdir -p /usr/local/src/nginx && cd /usr/local/src/nginx/ \
-  && apt source nginx
-
-RUN echo "*** Nginx Version ****" \
-  && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \
-  && echo "Nginx Version: ${NGINX_VERSION}"
+  && mkdir -p /usr/local/src/nginx && cd /usr/local/src/nginx \
+  && apt source -y nginx
 
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
@@ -182,14 +183,22 @@ RUN echo "**** Add Nginx Development Kit ****" \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_devel_kit|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Patch Nginx Build Config ***" \
-  && NGINX_VERSION=$(nginx -v 2>&1 | nginx -v 2>&1 | cut -d'/' -f2) \
   && sed -i 's|CFLAGS="$CFLAGS -Werror"|#CFLAGS="$CFLAGS -Werror"|g' /usr/local/src/nginx/nginx-*/auto/cc/gcc \
   && sed -i 's|dh_shlibdeps -a|dh_shlibdeps -a --dpkg-shlibdeps-params=--ignore-missing-info|g' /usr/local/src/nginx/nginx-*/debian/rules \
-#  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_image_filter_module|g' /usr/local/src/nginx/nginx-*/debian/rules \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_image_filter_module|g' /usr/local/src/nginx/nginx-*/debian/rules \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_xslt_module|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 COPY ./patches /patches
 
+# RUN echo "*** Patch Nginx (SPDY)" \
+#   && cd /usr/local/src/nginx/nginx-*/ \
+#   &&  patch -p1 < /patches/nginx_1.13.0_http2_spdy.patch
+#
+# RUN echo "*** Patch Nginx (HTTP2 HPACK)" \
+#   && cd /usr/local/src/nginx/nginx-*/ \
+#   &&  patch -p1 < /patches/nginx-1.15.8_http2-hpack.patch \
+#   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc|g' /usr/local/src/nginx/nginx-*/debian/rules
+#
 # RUN echo "*** Patch Nginx (Dynamic TLS Record Resizing)" \
 #   && cd /usr/local/src/nginx/nginx-*/ \
 #   &&  patch -p1 < /patches/nginx_dynamic_tls_records_1015008.patch
@@ -198,10 +207,6 @@ COPY ./patches /patches
 #   && cd /usr/local/src/nginx/nginx-*/ \
 #   &&  patch -p1 < /patches/nginx_1.11.12_http2_server_push.patch
 #
-# RUN echo "*** Patch Nginx (SPDY)" \
-#   && cd /usr/local/src/nginx/nginx-*/ \
-#   &&  patch -p1 < /patches/nginx_1.13.0_http2_spdy.patch
-#
 # RUN echo "*** Patch Nginx (OpenSSL Renegotiation Fix)" \
 #   && cd /usr/local/src/nginx/nginx-*/ \
 #   &&  patch -p1 < /patches/nginx_openssl-1.1.x_renegotiation_fix.patch
@@ -209,11 +214,6 @@ COPY ./patches /patches
 # RUN echo "*** Patch Nginx (Fix Max Protocol Version)" \
 #   && cd /usr/local/src/nginx/nginx-*/ \
 #   &&  patch -p1 < /patches/nginx-1.15.5-fix-max-protocol-version.patch
-#
-# RUN echo "*** Patch Nginx (HTTP2 HPACK)" \
-#   && cd /usr/local/src/nginx/nginx-*/ \
-#   &&  patch -p1 < /patches/nginx-1.15.8_http2-hpack.patch \
-#   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Patch Nginx (SPDY, HTTP2 HPACK, Dynamic TLS Records)" \
   && cd /usr/local/src/nginx/nginx-*/ \
@@ -247,9 +247,9 @@ RUN echo "*** Add libmaxminddb ****" \
 RUN echo "*** Add libgd ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/libgd/libgd.git \
-  && cd libmaxminddb \
-  && ./bootstrap \
-  && ./configure \
+  && cd libgd \
+  && ./bootstrap.sh \
+  && ./configure --with-webp \
   && make -j $(nproc) \
   && make install \
   && ldconfig
@@ -281,8 +281,7 @@ RUN echo "*** Add PCRE-Jit ***" \
 RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx/nginx-*/ \
   && cat debian/rules \
-  && cat auto/lib/libgd/conf \
-  && apt-get -y purge nginx* \
+  && apt-get -y -q purge nginx* \
   && rm -rf /usr/lib/nginx/modules/* \
   && apt build-dep nginx -y  \
   && dpkg-buildpackage -b \
@@ -319,20 +318,22 @@ RUN echo "*** remove current nginx ***" \
 
 COPY --from=BUILD /usr/local/lib/libbrotlidec.so /usr/local/lib/libbrotlidec.so
 COPY --from=BUILD /usr/local/lib/libbrotlienc.so /usr/local/lib/libbrotlienc.so
+COPY --from=BUILD /usr/local/lib/libgd.so /usr/local/lib/libgd.so
 COPY --from=BUILD /usr/local/lib/libmaxminddb.so /usr/local/lib/libmaxminddb.so
-COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
 COPY --from=BUILD /usr/local/lib/libpcre.so /usr/local/lib/libpcre.so
 COPY --from=BUILD /usr/local/lib/libpcre16.so /usr/local/lib/libpcre16.so
 COPY --from=BUILD /usr/local/lib/libpcre32.so /usr/local/lib/libpcre32.so
 COPY --from=BUILD /usr/local/lib/libpcrecpp.so /usr/local/lib/libpcrecpp.so
 COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
+COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
 RUN ldconfig
 
 COPY --from=BUILD /usr/local/src/nginx.deb /tmp/nginx.deb
 
 RUN echo "*** install nginx ***" \
   && dpkg -i /tmp/nginx.deb \
-  && rm -f /tmp/nginx.deb
+  && rm -f /tmp/nginx.deb \
+  && nginx -V
 
 RUN echo "*** house keeping ***" \
   && apt-get -y autoremove \
