@@ -252,12 +252,23 @@ RUN echo "*** Add libmaxminddb ****" \
   && make install \
   && ldconfig
 
+RUN echo "*** Add libwebp ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://chromium.googlesource.com/webm/libwebp \
+  && cd libwebp \
+  && bash autogen.sh \
+  && ./configure \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig \
+  && LD_LIBRARY_PATH="/usr/local/lib/"
+
 RUN echo "*** Add libgd ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/libgd/libgd.git \
   && cd libgd \
   && bash bootstrap.sh \
-  && ./configure --with-webp \
+  && ./configure --with-webp --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
   && make -j $(nproc) \
   && make install \
   && ldconfig
@@ -290,6 +301,7 @@ RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
   && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Purge Nginx ***" \
+  && DEBIAN_FRONTEND=noninteractive \
   && apt-get -y -q purge nginx* \
   && rm -rf /usr/lib/nginx/modules/*
 
@@ -319,11 +331,14 @@ ENV SHELL=/bin/bash \
 USER root
 
 RUN echo "**** Set local to en_US.UTF8 ****" \
-  && apt-get update && apt-get install -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y locales \
+  && apt-get update \
+  && DEBIAN_FRONTEND=noninteractive \
+  && apt-get install -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y locales \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && locale-gen
 
 RUN echo "*** remove current nginx ***" \
+  && DEBIAN_FRONTEND=noninteractive \
   && apt-get -y purge nginx* \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/local/lib/* \
@@ -339,16 +354,17 @@ COPY --from=BUILD /usr/local/lib/libpcre32.so /usr/local/lib/libpcre32.so
 COPY --from=BUILD /usr/local/lib/libpcrecpp.so /usr/local/lib/libpcrecpp.so
 COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
 COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
+
 RUN ldconfig
 
 COPY --from=BUILD /usr/local/src/nginx.deb /tmp/nginx.deb
 
 RUN echo "*** install nginx ***" \
   && dpkg -i /tmp/nginx.deb \
-  && rm -f /tmp/nginx.deb \
-  && nginx -V
+  && rm -f /tmp/nginx.deb
 
 RUN echo "*** house keeping ***" \
+  && DEBIAN_FRONTEND=noninteractive \
   && apt-get -y autoremove \
   && apt-get -y autoclean \
   && rm -rf /tmp/* \
@@ -364,6 +380,9 @@ RUN echo "**** configure ****" \
 # set proper permissions
 RUN echo "*** set permissions ***" \
   && chown -R www-data:root /var/cache/nginx /var/cache/pagespeed /var/lib/nginx /var/run/nginx-cache /var/www/html
+
+RUN echo "*** Nginx Build Info ***" \
+  && nginx -V
 
 WORKDIR /var/www/html
 
