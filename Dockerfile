@@ -28,19 +28,30 @@ RUN echo "**** install packages ****" \
   autogen \
   autogen-doc \
   automake \
+  autopoint \
   autotools-dev \
+  bsdmainutils \
   build-essential \
   ca-certificates \
   ccache \
   curl \
+  debhelper \
+  dh-autoreconf \
+  dh-strip-nondeterminism \
+  dh-systemd \
+  diffstat \
   dpkg-dev \
+  dwz \
   gcc \
   gettext \
   git \
   gnupg \
   gnupg2 \
   google-perftools \
+  groff-base \
   guile-2.0-libs \
+  intltool-debian \
+  libarchive-zip-perl \
   libbsd-dev \
   libbz2-1.0 \
   libbz2-dev \
@@ -48,6 +59,7 @@ RUN echo "**** install packages ****" \
   libbz2-ocaml-dev \
   libcroco3 \
   libcurl4-openssl-dev \
+  libfile-stripnondeterminism-perl \
   libgc1c2 \
   libgmp-dev \
   libgoogle-perftools-dev \
@@ -60,17 +72,21 @@ RUN echo "**** install packages ****" \
   libpcre3 \
   libpcre3-dev \
   libperl-dev \
+  libpipeline1 \
   libpng-dev \
   libreadline-dev \
   libssl-dev \
   libtool \
+  libuchardet0 \
   libwebp-dev \
   libxml2 \
   libxml2-dev \
   libxslt1-dev \
   locales \
-  pkg-config \
+  man-db \
   perl \
+  pkg-config \
+  po-debconf \
   python-pip \
   software-properties-common \
   tar \
@@ -276,8 +292,7 @@ RUN echo "*** Add libwebp ****" \
   && ./configure \
   && make -j $(nproc) \
   && make install \
-  && ldconfig \
-  && LD_LIBRARY_PATH="/usr/local/lib/"
+  && ldconfig
 
 RUN echo "*** Add libgd ****" \
   && cd /usr/local/src \
@@ -313,8 +328,8 @@ RUN echo "*** Add PCRE-Jit ***" \
   && ldconfig \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-#RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
-#  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
+RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
+  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Purge Nginx ***" \
   && DEBIAN_FRONTEND=noninteractive \
@@ -325,6 +340,7 @@ RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx/nginx-*/ \
   && cat debian/rules \
   && apt build-dep nginx -y -q \
+  && LD_LIBRARY_PATH="/usr/local/lib/" \
   && dpkg-buildpackage -b \
   && cd /usr/local/src/nginx \
   && dpkg -i nginx*.deb \
