@@ -12,7 +12,6 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # ENFORCE en_us UTF8
 ENV SHELL=/bin/bash \
-  LC_ALL=en_US.UTF-8 \
   LANG=en_US.UTF-8 \
   LANGUAGE=en_US.UTF-8
 
@@ -24,8 +23,10 @@ RUN echo "*** Nginx Version ****" \
 
 RUN echo "**** install packages ****" \
   && DEBIAN_FRONTEND=noninteractive \
-  && apt-get update && apt-get install -y \
+  && apt-get update && apt-get install -y -q \
   autoconf \
+  autogen \
+  autogen-doc \
   automake \
   autotools-dev \
   build-essential \
@@ -34,24 +35,28 @@ RUN echo "**** install packages ****" \
   curl \
   dpkg-dev \
   gcc \
+  gettext \
   git \
   gnupg \
   gnupg2 \
   google-perftools \
+  guile-2.0-libs \
   libbsd-dev \
   libbz2-1.0 \
   libbz2-dev \
   libbz2-ocaml \
   libbz2-ocaml-dev \
+  libcroco3 \
   libcurl4-openssl-dev \
-  libgd-dev \
-  libgd3 \
+  libgc1c2 \
   libgmp-dev \
   libgoogle-perftools-dev \
   libjansson-dev \
   libjemalloc-dev \
   libjpeg-dev \
   libjpeg62-turbo-dev \
+  libopts25 \
+  libopts25-dev \
   libpcre3 \
   libpcre3-dev \
   libperl-dev \
@@ -64,6 +69,7 @@ RUN echo "**** install packages ****" \
   libxml2-dev \
   libxslt1-dev \
   locales \
+  pkg-config \
   perl \
   python-pip \
   software-properties-common \
@@ -72,21 +78,23 @@ RUN echo "**** install packages ****" \
   uuid-dev \
   wget \
   zlib1g-dev
+  #  libgd-dev \
+  #  libgd3 \
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && locale-gen
 
 RUN  echo "**** Add Nginx Repo ****" \
+  && wget http://nginx.org/keys/nginx_signing.key -O /usr/local/src/nginx_signing.key \
+  && apt-key add /usr/local/src/nginx_signing.key \
   && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
-  && wget http://nginx.org/keys/nginx_signing.key \
-  && apt-key add nginx_signing.key \
   && echo "deb http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list \
   && echo "deb-src http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list \
   && apt-get update
 
 RUN echo "**** Prepare Nginx ****" \
   && mkdir -p /usr/local/src/nginx && cd /usr/local/src/nginx \
-  && apt source -y nginx
+  && apt source -y -q nginx
 
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
@@ -228,7 +236,7 @@ RUN echo "*** Add libbrotli ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/bagder/libbrotli.git \
   && cd libbrotli \
-  && ./autogen.sh \
+  && bash autogen.sh \
   && ./configure \
   && make -j $(nproc) \
   && make install \
@@ -238,7 +246,7 @@ RUN echo "*** Add libmaxminddb ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/maxmind/libmaxminddb.git \
   && cd libmaxminddb \
-  && ./bootstrap \
+  && bash bootstrap \
   && ./configure \
   && make -j $(nproc) \
   && make install \
@@ -248,7 +256,7 @@ RUN echo "*** Add libgd ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/libgd/libgd.git \
   && cd libgd \
-  && ./bootstrap.sh \
+  && bash bootstrap.sh \
   && ./configure --with-webp \
   && make -j $(nproc) \
   && make install \
@@ -281,7 +289,7 @@ RUN echo "*** Add PCRE-Jit ***" \
 RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx/nginx-*/ \
   && cat debian/rules \
-  && apt-get -y -q purge nginx* \
+#  && apt-get -y -q purge nginx* \
   && rm -rf /usr/lib/nginx/modules/* \
   && apt build-dep nginx -y  \
   && dpkg-buildpackage -b \
