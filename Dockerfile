@@ -1,4 +1,4 @@
-FROM nginx:mainline AS BUILD
+FROM nginx:mainline AS PREBUILD
 
 LABEL mantainer="Adrian Kriel <admin@extremeshok.com>" vendor="eXtremeSHOK.com"
 
@@ -83,6 +83,22 @@ RUN echo "**** install packages ****" \
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && locale-gen
+
+################################################
+#### MULTIBUILD: Stage 2 #######################
+################################################
+
+FROM PREBUILD AS BUILD
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# ENFORCE en_us UTF8
+ENV SHELL=/bin/bash \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8
+
+USER root
 
 RUN  echo "**** Add Nginx Repo ****" \
   && wget http://nginx.org/keys/nginx_signing.key -O /usr/local/src/nginx_signing.key \
@@ -315,7 +331,7 @@ RUN echo "*** Build Nginx ***" \
   &&  cp -f $(echo "/usr/local/src/nginx/nginx_*.deb") /usr/local/src/nginx.deb
 
 ################################################
-#### MULTIBUILD: Stage 2 #######################
+#### MULTIBUILD: Stage 3 #######################
 ################################################
 
 FROM nginx:mainline AS BASE
