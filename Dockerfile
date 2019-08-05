@@ -313,8 +313,8 @@ RUN echo "*** Add PCRE-Jit ***" \
   && ldconfig \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
-  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
+#RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
+#  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Purge Nginx ***" \
   && DEBIAN_FRONTEND=noninteractive \
