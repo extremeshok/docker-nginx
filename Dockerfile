@@ -286,12 +286,17 @@ RUN echo "*** Add PCRE-Jit ***" \
   && ldconfig \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
 
+RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
+  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
+
+RUN echo "*** Purge Nginx ***" \
+  && apt-get -y -q purge nginx* \
+  && rm -rf /usr/lib/nginx/modules/*
+
 RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx/nginx-*/ \
   && cat debian/rules \
-#  && apt-get -y -q purge nginx* \
-  && rm -rf /usr/lib/nginx/modules/* \
-  && apt build-dep nginx -y  \
+  && apt build-dep nginx -y -q \
   && dpkg-buildpackage -b \
   && cd /usr/local/src/nginx \
   && dpkg -i nginx*.deb \
