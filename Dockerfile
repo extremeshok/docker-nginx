@@ -88,6 +88,7 @@ RUN echo "**** install packages ****" \
   pkg-config \
   po-debconf \
   python-pip \
+  quilt \
   software-properties-common \
   tar \
   unzip \
@@ -104,7 +105,7 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
 #### MULTIBUILD: Stage 2 #######################
 ################################################
 
-FROM PREBUILD AS BUILD
+FROM PREBUILD AS BUILDLIBS
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -121,12 +122,93 @@ RUN  echo "**** Add Nginx Repo ****" \
   && apt-key add /usr/local/src/nginx_signing.key \
   && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
   && echo "deb http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list \
-  && echo "deb-src http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list \
-  && apt-get update
+  && echo "deb-src http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list
 
 RUN echo "**** Prepare Nginx ****" \
   && mkdir -p /usr/local/src/nginx && cd /usr/local/src/nginx \
+  && apt-get update \
   && apt source -y -q nginx
+
+RUN echo "*** Add libbrotli ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/bagder/libbrotli.git \
+  && cd libbrotli \
+  && bash autogen.sh \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+
+RUN echo "*** Add libmaxminddb ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/maxmind/libmaxminddb.git \
+  && cd libmaxminddb \
+  && bash bootstrap \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+
+RUN echo "*** Add libwebp ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://chromium.googlesource.com/webm/libwebp \
+  && cd libwebp \
+  && bash autogen.sh \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+
+RUN echo "*** Add libgd ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/libgd/libgd.git \
+  && cd libgd \
+  && bash bootstrap.sh \
+  && ./configure --prefix=/usr/local/ --with-webp \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+  # --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
+
+RUN echo "*** Add zlib-cf ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
+  && cd zlib-cf \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-zlib=/usr/local/src/zlib-cf|g' /usr/local/src/nginx/nginx-*/debian/rules
+
+################################################
+#### MULTIBUILD: Stage 3 #######################
+################################################
+
+FROM BUILDLIBS AS BUILD
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# ENFORCE en_us UTF8
+ENV SHELL=/bin/bash \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8
+
+USER root
+
+RUN echo "*** Add PCRE-Jit ***" \
+  && PCRE_VER=$(curl -sL https://ftp.pcre.org/pub/pcre/ | grep -E -o 'pcre\-[0-9.]+\.tar[.a-z]*gz' | awk -F "pcre-" '/.tar.gz$/ {print $2}' | sed -e 's|.tar.gz||g' | tail -n 1 2>&1) \
+  && curl --silent -o /tmp/pcre.tar.gz -L "https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VER}.tar.gz" \
+  && mkdir -p /usr/local/src/pcre \
+  && tar xfz /tmp/pcre.tar.gz -C /usr/local/src/pcre \
+  && rm -f /tmp/pcre.tar.gz \
+  && mv -f /usr/local/src/pcre/*/* /usr/local/src/pcre \
+  && cd /usr/local/src/pcre \
+  && ./configure --prefix=/usr/local/ --enable-utf8 --enable-unicode-properties --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-pcretest-libreadline --enable-jit \
+  && make -j "$(nproc)" \
+  && make install \
+  && ldconfig \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "**** Add OpenSSL 1.1.1 ****" \
   && cd /usr/local/src \
@@ -225,7 +307,6 @@ RUN echo "**** Add Nginx Development Kit ****" \
 RUN echo "*** Patch Nginx Build Config ***" \
   && sed -i 's|CFLAGS="$CFLAGS -Werror"|#CFLAGS="$CFLAGS -Werror"|g' /usr/local/src/nginx/nginx-*/auto/cc/gcc \
   && sed -i 's|dh_shlibdeps -a|dh_shlibdeps -a --dpkg-shlibdeps-params=--ignore-missing-info|g' /usr/local/src/nginx/nginx-*/debian/rules \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_image_filter_module|g' /usr/local/src/nginx/nginx-*/debian/rules \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_xslt_module|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 COPY ./patches /patches
@@ -264,81 +345,23 @@ RUN echo "*** Patch Nginx (Prioritize chacha)" \
   && cd /usr/local/src/nginx/nginx-*/ \
   &&  patch -p1 < /patches/nginx-1.15.4-reprioritize-chacha-openssl-1.1.1.patch
 
-RUN echo "*** Add libbrotli ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/bagder/libbrotli.git \
-  && cd libbrotli \
-  && bash autogen.sh \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
+# Bugfix: Disable http_image_filter_module, cannot find the gd libs...
+# RUN echo "**** Add http_image_filter_module ****" \
+#   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_image_filter_module|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-RUN echo "*** Add libmaxminddb ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/maxmind/libmaxminddb.git \
-  && cd libmaxminddb \
-  && bash bootstrap \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
+# This is not needed, so save the cpu
+#RUN echo "*** Purge Nginx ***" \
+#  && DEBIAN_FRONTEND=noninteractive \
+#  && apt-get -y -q purge nginx* \
+#  && rm -rf /usr/lib/nginx/modules/*
 
-RUN echo "*** Add libwebp ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://chromium.googlesource.com/webm/libwebp \
-  && cd libwebp \
-  && bash autogen.sh \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
+# ngx_http_geoip_module-debug.so	       ngx_http_image_filter_module.so	ngx_http_xslt_filter_module-debug.so  ngx_stream_geoip_module.so
+# ngx_http_geoip_module.so	       ngx_http_js_module-debug.so	ngx_http_xslt_filter_module.so	      ngx_stream_js_module-debug.so
+# ngx_http_image_filter_module-debug.so  ngx_http_js_module.so		ngx_stream_geoip_module-debug.so      ngx_stream_js_module.so
 
-RUN echo "*** Add libgd ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/libgd/libgd.git \
-  && cd libgd \
-  && bash bootstrap.sh \
-  && ./configure --with-webp --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
-
-RUN echo "*** Add zlib-cf ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
-  && cd zlib-cf \
-  && ./configure \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-zlib=/usr/local/src/zlib-cf|g' /usr/local/src/nginx/nginx-*/debian/rules
-
-RUN echo "*** Add PCRE-Jit ***" \
-  && PCRE_VER=$(curl -sL https://ftp.pcre.org/pub/pcre/ | grep -E -o 'pcre\-[0-9.]+\.tar[.a-z]*gz' | awk -F "pcre-" '/.tar.gz$/ {print $2}' | sed -e 's|.tar.gz||g' | tail -n 1 2>&1) \
-  && curl --silent -o /tmp/pcre.tar.gz -L "https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VER}.tar.gz" \
-  && mkdir -p /usr/local/src/pcre \
-  && tar xfz /tmp/pcre.tar.gz -C /usr/local/src/pcre \
-  && rm -f /tmp/pcre.tar.gz \
-  && mv -f /usr/local/src/pcre/*/* /usr/local/src/pcre \
-  && cd /usr/local/src/pcre \
-  && ./configure --prefix=/usr/local/ --enable-utf8 --enable-unicode-properties --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-pcretest-libreadline --enable-jit \
-  && make -j "$(nproc)" \
-  && make install \
-  && ldconfig \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
-
-RUN echo "*** Bugfix: Disable http_image_filter_module ***" \
-  && sed -i 's| --with-http_image_filter_module||g' /usr/local/src/nginx/nginx-*/debian/rules
-
-RUN echo "*** Purge Nginx ***" \
-  && DEBIAN_FRONTEND=noninteractive \
-  && apt-get -y -q purge nginx* \
-  && rm -rf /usr/lib/nginx/modules/*
 
 RUN echo "*** Build Nginx ***" \
   && cd /usr/local/src/nginx/nginx-*/ \
-  && cat debian/rules \
   && apt build-dep nginx -y -q \
   && LD_LIBRARY_PATH="/usr/local/lib/" \
   && dpkg-buildpackage -b \
@@ -347,7 +370,7 @@ RUN echo "*** Build Nginx ***" \
   &&  cp -f $(echo "/usr/local/src/nginx/nginx_*.deb") /usr/local/src/nginx.deb
 
 ################################################
-#### MULTIBUILD: Stage 3 #######################
+#### MULTIBUILD: Stage 4 #######################
 ################################################
 
 FROM nginx:mainline AS BASE
@@ -375,6 +398,10 @@ RUN echo "*** remove current nginx ***" \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/local/lib/* \
   && rm -rf /usr/lib/nginx/modules/*
+
+# BUG FIX: use the dynamic http_image_filter module
+COPY --from=BUILD /usr/lib/nginx/modules/ngx_http_image_filter_module.so /usr/lib/nginx/modules/ngx_http_image_filter_module.so
+COPY --from=BUILD /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so
 
 COPY --from=BUILD /usr/local/lib/libbrotlidec.so /usr/local/lib/libbrotlidec.so
 COPY --from=BUILD /usr/local/lib/libbrotlienc.so /usr/local/lib/libbrotlienc.so

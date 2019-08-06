@@ -37,7 +37,7 @@ If you have any ideas or suggestions, please open an issue or pull request
 * http_substitutions_filter
 * Memc (memcached)
 * Nginx Development Kit
-* ngx_http_image_filter_module
+* ngx_http_image_filter_module **dynamic module**
 * ngx_http_xslt_filter_module
 * pagespeed-stable
 * Redis2
