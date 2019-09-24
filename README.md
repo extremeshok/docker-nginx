@@ -65,7 +65,7 @@ docker pull extremeshok/nginx:latest && docker run --rm -ti extremeshok/nginx:la
 
 ## Example Nginx -V
 ```
-nginx version: nginx/1.17.0
+nginx version: nginx/1.17.x
 built by gcc 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)
 built with OpenSSL 1.1.1d-dev  xx XXX xxxx
 TLS SNI support enabled
