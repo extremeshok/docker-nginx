@@ -120,7 +120,7 @@ USER root
 RUN  echo "**** Add Nginx Repo ****" \
   && wget http://nginx.org/keys/nginx_signing.key -O /usr/local/src/nginx_signing.key \
   && apt-key add /usr/local/src/nginx_signing.key \
-  && CODENAME=$(grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release) \
+  && CODENAME=$(grep 'VERSION_CODENAME=' /etc/os-release | cut -d"=" -f2 | xargs) \
   && echo "deb http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list \
   && echo "deb-src http://nginx.org/packages/mainline/debian/ ${CODENAME} nginx" >> /etc/apt/sources.list
 
