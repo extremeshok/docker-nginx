@@ -445,7 +445,7 @@ RUN echo "*** Nginx Build Info ***" \
 
 WORKDIR /var/www/html
 
-EXPOSE 80
+EXPOSE 80 443 443/udp
 
 STOPSIGNAL SIGTERM
 
