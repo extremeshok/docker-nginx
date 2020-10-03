@@ -59,6 +59,7 @@ Important note: you must include both modsecurity.conf and modsecurity-crs to yo
 * nginx-rtmp-module
 * nginx-vod-module
 * naxsi
+* modsecurity-crs
 
 ## Testing
 ```
