@@ -170,6 +170,20 @@ RUN echo "*** Add libgd ****" \
   && ldconfig
   # --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
 
+RUN echo "*** Add libmodsecurity ****" \
+  && cd /usr/local/src \
+  && wget -qO modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended \
+  && git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity \
+  && cd ModSecurity \
+  && git submodule init \
+  && git submodule update \
+  && ./build.sh \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
+  # --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
+
 RUN echo "*** Add zlib-cf ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/cloudflare/zlib.git -b gcc.amd64 /usr/local/src/zlib-cf \
@@ -298,6 +312,11 @@ RUN echo "**** Add pagespeed ****" \
   && rm -f /tmp/psol.tar.gz \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx-pagespeed|g' /usr/local/src/nginx/nginx-*/debian/rules
 
+RUN echo "**** Add modsecurity (connector for nginx) ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/SpiderLabs/ModSecurity-nginx \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ModSecurity-nginx|g' /usr/local/src/nginx/nginx-*/debian/rules
+
 # this needs to be last
 RUN echo "**** Add Nginx Development Kit ****" \
   && cd /usr/local/src \
@@ -339,7 +358,7 @@ COPY ./patches /patches
 RUN echo "*** Patch Nginx (SPDY, HTTP2 HPACK, Dynamic TLS Records)" \
   && cd /usr/local/src/nginx/nginx-*/ \
   && patch -p1 < /patches/kn007_nginx.patch \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc|g' /usr/local/src/nginx/nginx-${NGINX_VERSION}/debian/rules
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-http_v2_hpack_enc|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "*** Patch Nginx (Prioritize chacha)" \
   && cd /usr/local/src/nginx/nginx-*/ \
@@ -413,6 +432,7 @@ COPY --from=BUILD /usr/local/lib/libpcre32.so /usr/local/lib/libpcre32.so
 COPY --from=BUILD /usr/local/lib/libpcrecpp.so /usr/local/lib/libpcrecpp.so
 COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
 COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
+COPY --from=BUILD /usr/local/lib/libmodsecurity.so /usr/local/lib/libmodsecurity.so
 
 RUN ldconfig
 
@@ -434,7 +454,19 @@ RUN echo "**** configure ****" \
   && mkdir -p /var/cache/pagespeed \
   && mkdir -p /var/lib/nginx \
   && mkdir -p /var/run/nginx-cache \
-  && mkdir -p /var/www/html
+  && mkdir -p /var/www/html \
+  && mkdir -p /etc/nginx/modsec/conf.d
+
+COPY --from=BUILD /usr/local/src/modsecurity.conf /etc/nginx/modsec/modsecurity.conf
+
+RUN echo "# Example placeholder\n" > /etc/nginx/modsec/conf.d/example.conf \
+  && echo "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# User generated\nInclude /etc/nginx/modsec/conf.d/*.conf\n" > /etc/nginx/modsec/main.conf \
+  && echo "# For inclusion and centralized control\nmodsecurity on;\n" > /etc/nginx/modsec/modsec_on.conf \
+  && echo "# For inclusion and centralized control\nmodsecurity_rules_file /etc/nginx/modsec/modsec_includes.conf;\n" > /etc/nginx/modsec/modsec_rules.conf \
+  && echo "# For inclusion and centralized control\ninclude /etc/nginx/modsec/modsecurity.conf" > /etc/nginx/modsec/modsec_includes.conf \
+  && sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/g' /etc/nginx/modsec/modsecurity.conf \
+  && sed -i 's!SecAuditLog /var/log/modsec_audit.log!SecAuditLog /var/log/nginx/modsec_audit.log!g' /etc/nginx/modsec/modsecurity.conf \
+  && curl https://raw.githubusercontent.com/SpiderLabs/ModSecurity/49495f1925a14f74f93cb0ef01172e5abc3e4c55/unicode.mapping -o /etc/nginx/modsec/unicode.mapping
 
 # set proper permissions
 RUN echo "*** set permissions ***" \
@@ -449,4 +481,6 @@ EXPOSE 80 443 443/udp
 
 STOPSIGNAL SIGTERM
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/usr/sbin/nginx"]
+
+CMD ["-g", "daemon off;"]
