@@ -45,6 +45,9 @@ If you have any ideas or suggestions, please open an issue or pull request
 * Srcache
 * upload-progress
 * vts
+* mod_security
+
+Important note: you must include both modsecurity.conf and modsecurity-crs to your server config by yourself (path: /etc/nginx/modsec)
 
 ## Not included
 * ngx_http_js_module
@@ -56,7 +59,6 @@ If you have any ideas or suggestions, please open an issue or pull request
 * nginx-rtmp-module
 * nginx-vod-module
 * naxsi
-* mod_security
 
 ## Testing
 ```
