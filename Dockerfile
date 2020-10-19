@@ -241,7 +241,7 @@ RUN echo "**** Add vts ****" \
 
 RUN echo "**** Add Brotli ****" \
   && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/yverry/ngx_brotli.git \
+  && git clone --recursive --depth=1 https://github.com/google/ngx_brotli.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_brotli|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "**** Add More Headers ****" \
