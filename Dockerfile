@@ -178,7 +178,7 @@ RUN echo "*** Add libmodsecurity ****" \
   && git submodule init \
   && git submodule update \
   && ./build.sh \
-  && ./configure --prefix=/usr/local/ \
+  && ./configure --prefix=/usr/local/ --enable-lua-cache --enable-pcre-jit \
   && make -j $(nproc) \
   && make install \
   && ldconfig
