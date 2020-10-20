@@ -173,7 +173,7 @@ RUN echo "*** Add libgd ****" \
 RUN echo "*** Add libmodsecurity ****" \
   && cd /usr/local/src \
   && wget -qO modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended \
-  && git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity \
+  && git clone --depth=1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity \
   && cd ModSecurity \
   && git submodule init \
   && git submodule update \
@@ -182,7 +182,15 @@ RUN echo "*** Add libmodsecurity ****" \
   && make -j $(nproc) \
   && make install \
   && ldconfig
-  # --with-ld-opt="-L /usr/local/lib" --with-cc-opt="-I /usr/local/include" \
+
+RUN echo "*** Add libsregex ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/openresty/sregex \
+  && cd sregex \
+  && ./configure --prefix=/usr/local/ \
+  && make -j $(nproc) \
+  && make install \
+  && ldconfig
 
 RUN echo "*** Add zlib-cf ****" \
   && cd /usr/local/src \
@@ -316,6 +324,11 @@ RUN echo "**** Add modsecurity (connector for nginx) ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/SpiderLabs/ModSecurity-nginx \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ModSecurity-nginx|g' /usr/local/src/nginx/nginx-*/debian/rules
+
+RUN echo "**** Add ngx_replace_filter ****" \
+  && cd /usr/local/src \
+  && git clone --recursive --depth=1 https://github.com/openresty/replace-filter-nginx-module \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/replace-filter-nginx-module|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 # this needs to be last
 RUN echo "**** Add Nginx Development Kit ****" \
