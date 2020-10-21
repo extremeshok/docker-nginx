@@ -446,6 +446,7 @@ COPY --from=BUILD /usr/local/lib/libpcrecpp.so /usr/local/lib/libpcrecpp.so
 COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
 COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
 COPY --from=BUILD /usr/local/lib/libmodsecurity.so /usr/local/lib/libmodsecurity.so
+COPY --from=BUILD /usr/local/lib/libsregex.so /usr/local/lib/libsregex.so
 
 RUN ldconfig
 
