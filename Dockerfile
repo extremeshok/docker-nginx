@@ -187,7 +187,6 @@ RUN echo "*** Add libsregex ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/openresty/sregex \
   && cd sregex \
-  && ./configure --prefix=/usr/local/ \
   && make -j $(nproc) \
   && make install \
   && ldconfig
