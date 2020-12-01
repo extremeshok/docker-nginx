@@ -393,8 +393,8 @@ RUN echo "*** remove current nginx ***" \
 COPY --from=BUILD /usr/lib/nginx/modules/ngx_http_image_filter_module.so /usr/lib/nginx/modules/ngx_http_image_filter_module.so
 COPY --from=BUILD /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so
 
-COPY --from=BUILD /usr/local/lib/libbrotlidec.so /usr/local/lib/libbrotlidec.so
-COPY --from=BUILD /usr/local/lib/libbrotlienc.so /usr/local/lib/libbrotlienc.so
+# COPY --from=BUILD /usr/local/lib/libbrotlidec.so /usr/local/lib/libbrotlidec.so
+# COPY --from=BUILD /usr/local/lib/libbrotlienc.so /usr/local/lib/libbrotlienc.so
 COPY --from=BUILD /usr/local/lib/libgd.so /usr/local/lib/libgd.so
 COPY --from=BUILD /usr/local/lib/libmaxminddb.so /usr/local/lib/libmaxminddb.so
 COPY --from=BUILD /usr/local/lib/libpcre.so /usr/local/lib/libpcre.so
