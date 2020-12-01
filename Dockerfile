@@ -129,16 +129,6 @@ RUN echo "**** Prepare Nginx ****" \
   && apt-get update \
   && apt source -y -q nginx
 
-RUN echo "*** Add libbrotli ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/google/ngx_brotli.git \
-  && cd libbrotli \
-  && bash autogen.sh \
-  && ./configure --prefix=/usr/local/ \
-  && make -j $(nproc) \
-  && make install \
-  && ldconfig
-
 RUN echo "*** Add libmaxminddb ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/maxmind/libmaxminddb.git \
@@ -225,9 +215,9 @@ RUN echo "**** Add vts ****" \
   && git clone --recursive --depth=1 https://github.com/vozlt/nginx-module-vts.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/nginx-module-vts|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-RUN echo "**** Add Brotli ****" \
+RUN echo "*** Add libbrotli ****" \
   && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/yverry/ngx_brotli.git \
+  && git clone --recursive --depth=1 https://github.com/google/ngx_brotli.git \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/ngx_brotli|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "**** Add More Headers ****" \
