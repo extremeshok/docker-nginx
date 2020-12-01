@@ -131,7 +131,7 @@ RUN echo "**** Prepare Nginx ****" \
 
 RUN echo "*** Add libbrotli ****" \
   && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/bagder/libbrotli.git \
+  && git clone --recursive --depth=1 https://github.com/google/ngx_brotli.git \
   && cd libbrotli \
   && bash autogen.sh \
   && ./configure --prefix=/usr/local/ \
