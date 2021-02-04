@@ -46,6 +46,7 @@ RUN echo "**** install packages ****" \
   gcc \
   gettext \
   git \
+  golang \
   gnupg \
   gnupg2 \
   google-perftools \
