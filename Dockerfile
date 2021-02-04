@@ -33,6 +33,7 @@ RUN echo "**** install packages ****" \
   bsdmainutils \
   build-essential \
   ca-certificates \
+  cargo \
   ccache \
   cmake \
   curl \
