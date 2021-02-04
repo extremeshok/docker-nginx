@@ -34,6 +34,7 @@ RUN echo "**** install packages ****" \
   build-essential \
   ca-certificates \
   ccache \
+  cmake \
   curl \
   debhelper \
   dh-autoreconf \
