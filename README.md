@@ -143,10 +143,3 @@ configure arguments:
 
 ## Build Options Inspired by
 https://github.com/nginx/nginx/blob/master/auto/options https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
-
-## About Docker Image
-Any recent changes to the nginx modules will be updated once a month in this docker image.
-So you won't missed any of those bug fixes!
-```
-docker pull docker.pkg.github.com/chandr1000/docker-nginx/docker-nginx:latest
-```
