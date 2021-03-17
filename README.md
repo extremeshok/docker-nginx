@@ -16,6 +16,9 @@ Used for all our webservers, serving millions of pages a month. First byte times
 ## Note
 If you have any ideas or suggestions, please open an issue or pull request
 
+## Thank you
+* chandr1000 (Irina Shinakawa) for mod-security
+
 ## Features
 * OpenSSL 1.1.1 latest (TLS 1.3) with ec_nistp_64_gcc_128 enabled (speed)
 * Nginx Patched to enable with SPDY, HTTP2 HPACK, Dynamic TLS Records, Prioritize chacha (speed)
@@ -36,6 +39,7 @@ If you have any ideas or suggestions, please open an issue or pull request
 * http concat
 * http_substitutions_filter
 * Memc (memcached)
+* mod_security
 * Nginx Development Kit
 * ngx_http_image_filter_module **dynamic module**
 * ngx_http_xslt_filter_module
@@ -45,21 +49,20 @@ If you have any ideas or suggestions, please open an issue or pull request
 * Srcache
 * upload-progress
 * vts
-* mod_security
 
 Important note: you must include both modsecurity.conf and modsecurity-crs to your server config by yourself (path: /etc/nginx/modsec)
 
 ## Not included
-* ngx_http_js_module
-* ngx-fancyindex
 * lua-nginx-module
 * lua-upstream-nginx-module
-* nchan
-* nginx-upstream-fair
-* nginx-rtmp-module
-* nginx-vod-module
-* naxsi
 * modsecurity-crs
+* naxsi
+* nchan
+* nginx-rtmp-module
+* nginx-upstream-fair
+* nginx-vod-module
+* ngx_http_js_module
+* ngx-fancyindex
 
 ## Testing
 ```
