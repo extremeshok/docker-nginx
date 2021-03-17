@@ -45,6 +45,9 @@ If you have any ideas or suggestions, please open an issue or pull request
 * Srcache
 * upload-progress
 * vts
+* mod_security
+
+Important note: you must include both modsecurity.conf and modsecurity-crs to your server config by yourself (path: /etc/nginx/modsec)
 
 ## Not included
 * ngx_http_js_module
@@ -56,7 +59,7 @@ If you have any ideas or suggestions, please open an issue or pull request
 * nginx-rtmp-module
 * nginx-vod-module
 * naxsi
-* mod_security
+* modsecurity-crs
 
 ## Testing
 ```
@@ -140,3 +143,10 @@ configure arguments:
 
 ## Build Options Inspired by
 https://github.com/nginx/nginx/blob/master/auto/options https://raw.githubusercontent.com/centminmod/centminmod/master/inc/nginx_configure.inc https://github.com/VirtuBox/nginx-ee/blob/master/nginx-build.sh
+
+## About Docker Image
+Any recent changes to the nginx modules will be updated once a month in this docker image.
+So you won't missed any of those bug fixes!
+```
+docker pull docker.pkg.github.com/chandr1000/docker-nginx/docker-nginx:latest
+```
