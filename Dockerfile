@@ -33,7 +33,9 @@ RUN echo "**** install packages ****" \
   bsdmainutils \
   build-essential \
   ca-certificates \
+  cargo \
   ccache \
+  cmake \
   curl \
   debhelper \
   dh-autoreconf \
@@ -45,6 +47,7 @@ RUN echo "**** install packages ****" \
   gcc \
   gettext \
   git \
+  golang \
   gnupg \
   gnupg2 \
   google-perftools \
@@ -221,10 +224,10 @@ RUN echo "*** Add PCRE-Jit ***" \
   && ldconfig \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-pcre-jit --with-pcre=/usr/local/src/pcre|g' /usr/local/src/nginx/nginx-*/debian/rules
 
-RUN echo "**** Add OpenSSL 1.1.1 ****" \
-  && cd /usr/local/src \
-  && git clone --recursive --depth=1 https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
-  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl --with-openssl-opt="enable-ec_nistp_64_gcc_128"|g' /usr/local/src/nginx/nginx-*/debian/rules
+#RUN echo "**** Add OpenSSL 1.1.1 ****" \
+#  && cd /usr/local/src \
+#  && git clone --recursive --depth=1 https://github.com/openssl/openssl.git -b OpenSSL_1_1_1-stable \
+#  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/src/openssl --with-openssl-opt="enable-ec_nistp_64_gcc_128"|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 RUN echo "**** Add set misc ****" \
   && cd /usr/local/src \
@@ -318,6 +321,11 @@ RUN echo "**** Add ngx_replace_filter ****" \
   && cd /usr/local/src \
   && git clone --recursive --depth=1 https://github.com/openresty/replace-filter-nginx-module \
   && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --add-module=/usr/local/src/replace-filter-nginx-module|g' /usr/local/src/nginx/nginx-*/debian/rules
+
+RUN echo "**** Add quic support ****" \
+  && cd /usr/local \
+  && git clone --recursive https://github.com/cloudflare/quiche \
+  && sed -i 's|--with-ld-opt="$(LDFLAGS)"|--with-ld-opt="$(LDFLAGS)" --with-openssl=/usr/local/quiche/deps/boringssl --with-http_v3_module --with-quiche=/usr/local/quiche|g' /usr/local/src/nginx/nginx-*/debian/rules
 
 # this needs to be last
 RUN echo "**** Add Nginx Development Kit ****" \
@@ -436,6 +444,7 @@ COPY --from=BUILD /usr/local/lib/libpcreposix.so /usr/local/lib/libpcreposix.so
 COPY --from=BUILD /usr/local/lib/libz.so /usr/local/lib/libz.so
 COPY --from=BUILD /usr/local/lib/libmodsecurity.so /usr/local/lib/libmodsecurity.so
 COPY --from=BUILD /usr/local/lib/libsregex.so /usr/local/lib/libsregex.so
+COPY --from=BUILD /usr/local/quiche /usr/local/quiche
 
 RUN ldconfig
 
